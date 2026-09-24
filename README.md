@@ -115,9 +115,17 @@ See instructions to run Wallos below.
 30 1 * * 1 php /var/www/html/endpoints/cronjobs/storetotalyearlycost.php >> /var/log/cron/storetotalyearlycost.log 2>&1
 30 3 * * 1 php /var/www/html/endpoints/cronjobs/generaterecommendations.php weekly >> /var/log/cron/generaterecommendations.log 2>&1
 0 4 1 * * php /var/www/html/endpoints/cronjobs/generaterecommendations.php monthly >> /var/log/cron/generaterecommendations.log 2>&1
+* * * * * php /var/www/html/endpoints/cronjobs/processrecommendations.php --once >> /var/log/cron/processrecommendations.log 2>&1
 ```
 
 5. If your web root is not `/var/www/html/` adjust the cronjobs above accordingly.
+
+AI recommendations run in a background queue; the settings page polls for progress
+and resumes tracking active jobs when reopened. Docker starts the worker automatically.
+For baremetal, the `processrecommendations.php --once` cron entry above processes one
+queued job per invocation. Alternatively, supervise `php endpoints/cronjobs/processrecommendations.php`
+as the web server user for immediate processing. Provider requests have a 15-minute
+timeout. Interrupted jobs expire and can be retried without removing existing recommendations.
 
 #### Updating
 
