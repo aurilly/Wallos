@@ -157,6 +157,11 @@ if ($userIdToDelete == 1 || $userIdToDelete != $userId) {
     $stmt->bindValue(':id', $userIdToDelete, SQLITE3_INTEGER);
     $result = $stmt->execute();
 
+    // Delete AI recommendation jobs
+    $stmt = $db->prepare('DELETE FROM ai_recommendation_jobs WHERE user_id = :id');
+    $stmt->bindValue(':id', $userIdToDelete, SQLITE3_INTEGER);
+    $result = $stmt->execute();
+
     // Delete AI recommendations
     $stmt = $db->prepare('DELETE FROM ai_recommendations WHERE user_id = :id');
     $stmt->bindValue(':id', $userIdToDelete, SQLITE3_INTEGER);

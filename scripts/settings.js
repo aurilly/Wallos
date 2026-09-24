@@ -1305,7 +1305,7 @@ function saveAiSettingsButton() {
       if (data.success) {
         showSuccessMessage(data.message);
         const runAiActionButton = document.querySelector("#runAiRecommendations");
-        if (data.enabled) {
+        if (data.enabled && !aiRecommendationsBusy) {
           runAiActionButton.classList.remove("hidden");
         } else {
           runAiActionButton.classList.add("hidden");
@@ -1356,50 +1356,105 @@ function translateCategories() {
     });
 }
 
-function runAiRecommendations() {
-  const endpoint = 'endpoints/ai/generate_recommendations.php';
+let aiRecommendationsBusy = false;
+
+function setAiRecommendationsBusy(busy) {
+  aiRecommendationsBusy = busy;
   const button = document.querySelector("#runAiRecommendations");
   const spinner = document.querySelector("#aiSpinner");
+  button.classList.toggle("hidden", busy || !document.querySelector("#ai_enabled").checked);
+  spinner.classList.toggle("hidden", !busy);
+}
 
-  button.classList.add("hidden");
-  spinner.classList.remove("hidden");
-
-  fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': window.csrfToken,
-    }
-  })
-    .then(async response => {
-      const responseText = await response.text();
-      let data;
-
-      try {
-        data = JSON.parse(responseText);
-      } catch (error) {
-        throw new Error(`${translate('network_response_error')} (HTTP ${response.status})`);
-      }
-
-      if (!response.ok && !data.message) {
-        throw new Error(`${translate('network_response_error')} (HTTP ${response.status})`);
-      }
-
-      return data;
-    })
-    .then(data => {
-      if (data.success) {
-        showSuccessMessage(data.message);
-      } else {
-        showErrorMessage(data.message);
-      }
-    })
-    .catch(error => {
-      showErrorMessage(error.message || translate('unknown_error'));
-    })
-    .finally(() => {
-      button.classList.remove("hidden");
-      spinner.classList.add("hidden");
+async function requestAiJob(endpoint) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      cache: 'no-store',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': window.csrfToken,
+      },
     });
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(`${translate('network_response_error')} (HTTP ${response.status})`);
+    }
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || translate('network_response_error'));
+    }
+    return data;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
+async function pollAiRecommendations(data) {
+  const status = document.querySelector("#aiJobStatus");
+  let failures = 0;
+  while (data.status === 'queued' || data.status === 'running') {
+    status.textContent = data.message;
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    try {
+      data = await requestAiJob('endpoints/ai/recommendation_status.php');
+      failures = 0;
+    } catch (error) {
+      // A temporary network failure does not cancel the server-side job.
+      if (++failures >= 5) throw error;
+    }
+  }
+  status.textContent = data.message;
+  if (data.status === 'completed') {
+    showSuccessMessage(data.message);
+  } else if (data.status === 'failed') {
+    showErrorMessage(data.message);
+  }
+}
+
+async function runAiRecommendations() {
+  if (aiRecommendationsBusy) return;
+  setAiRecommendationsBusy(true);
+  document.querySelector("#aiJobStatus").textContent = '';
+  try {
+    const data = await requestAiJob('endpoints/ai/generate_recommendations.php');
+    await pollAiRecommendations(data);
+  } catch (error) {
+    const message = error.message || translate('unknown_error');
+    document.querySelector("#aiJobStatus").textContent = message;
+    showErrorMessage(message);
+  } finally {
+    setAiRecommendationsBusy(false);
+  }
+}
+
+async function resumeAiRecommendations() {
+  if (!document.querySelector("#runAiRecommendations") || aiRecommendationsBusy) return;
+  try {
+    const data = await requestAiJob('endpoints/ai/recommendation_status.php');
+    if (aiRecommendationsBusy) return;
+    document.querySelector("#aiJobStatus").textContent = data.message;
+    if (!['queued', 'running'].includes(data.status)) return;
+    setAiRecommendationsBusy(true);
+    try {
+      await pollAiRecommendations(data);
+    } catch (error) {
+      document.querySelector("#aiJobStatus").textContent = error.message || translate('unknown_error');
+      showErrorMessage(error.message || translate('unknown_error'));
+    } finally {
+      setAiRecommendationsBusy(false);
+    }
+  } catch {
+    // Loading settings should still work when the status endpoint is unavailable.
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', resumeAiRecommendations);
+} else {
+  resumeAiRecommendations();
 }

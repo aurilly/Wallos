@@ -1415,6 +1415,7 @@ $upcomingPaymentsLimit = normalize_upcoming_payments_limit($settings['upcoming_p
                 <input type="submit" class="thin mobile-grow-force" value="<?= translate('save', $i18n) ?>"
                     id="saveAiSettings" onClick="saveAiSettingsButton()" />
             </div>
+            <p id="aiJobStatus" role="status" aria-live="polite"></p>
             <div class="settings-notes">
                 <p><i class="fa-solid fa-circle-info"></i><?= translate('ai_recommendations_info', $i18n) ?></p>
                 <p><i class="fa-solid fa-circle-info"></i><?= translate('may_take_time', $i18n) ?></p>

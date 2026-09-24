@@ -45,10 +45,14 @@ wallos_test('AI notes migration defaults existing and new subscriptions to priva
 });
 
 wallos_test('manual and scheduled AI requests both use the notes consent filter', function () {
-    foreach (['endpoints/ai/generate_recommendations.php', 'endpoints/cronjobs/generaterecommendations.php'] as $file) {
+    foreach (['includes/ai_recommendations.php'] as $file) {
         $source = file_get_contents(WALLOS_ROOT . '/' . $file);
-        assert_contains('includes/ai_subscription_notes.php', $source, $file . ' loads the consent filter');
+        assert_contains('/ai_subscription_notes.php', $source, $file . ' loads the consent filter');
         assert_contains('...ai_subscription_notes($row)', $source, $file . ' filters notes before constructing the payload');
         assert_not_contains("\$row['notes']", $source, $file . ' does not read notes outside the consent filter');
+    }
+    foreach (['endpoints/ai/generate_recommendations.php', 'endpoints/cronjobs/generaterecommendations.php'] as $file) {
+        $source = file_get_contents(WALLOS_ROOT . '/' . $file);
+        assert_contains('ai_job_enqueue(', $source, $file . ' uses the shared background generation path');
     }
 });
