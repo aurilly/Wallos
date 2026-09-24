@@ -1217,12 +1217,43 @@ var sortable = Sortable.create(el, {
   },
 });
 
+let aiModels = null;
+let aiModelsLoading = false;
+
+function filterAiModels() {
+  if (aiModels === null) return;
+  const select = document.querySelector("#ai_model");
+  const query = document.querySelector("#ai_model_search").value.trim().toLowerCase();
+  const selected = select.value;
+  const currentOption = select.selectedOptions[0]?.cloneNode(true);
+  const matches = aiModels.filter(model =>
+    model.name.toLowerCase().includes(query) || model.id.toLowerCase().includes(query));
+
+  select.replaceChildren();
+  // Filtering must never silently change the model that Save will submit.
+  if (currentOption && !matches.some(model => model.id === selected)) {
+    select.appendChild(currentOption);
+  }
+  matches.forEach(model => {
+    const option = document.createElement('option');
+    option.value = model.id;
+    option.textContent = model.name;
+    select.appendChild(option);
+  });
+  select.value = selected;
+  const status = document.querySelector("#ai_model_search_status");
+  status.textContent = matches.length ? '' : status.dataset.empty;
+}
+
 function fetch_ai_models() {
+  if (aiModelsLoading) return;
+  aiModelsLoading = true;
   const endpoint = 'endpoints/ai/fetch_models.php';
   const type = document.querySelector("#ai_type").value;
   const api_key = document.querySelector("#ai_api_key").value.trim();
   const ollama_host = document.querySelector("#ai_ollama_host").value.trim();
-  const modelSelect = document.querySelector("#ai_model");
+  const status = document.querySelector("#ai_model_search_status");
+  status.textContent = status.dataset.loading;
 
   fetch(endpoint, {
     method: 'POST',
@@ -1235,23 +1266,27 @@ function fetch_ai_models() {
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        modelSelect.innerHTML = '';
-        data.models.forEach(model => {
-          const option = document.createElement('option');
-          option.value = model.id;
-          option.textContent = model.name;
-          modelSelect.appendChild(option);
-        });
+        if (document.querySelector("#ai_type").value !== type) return;
+        aiModels = data.models.map(model => ({ id: String(model.id), name: String(model.name || model.id) }));
+        filterAiModels();
       } else {
+        status.textContent = '';
         showErrorMessage(data.message);
       }
     })
     .catch(error => {
+      status.textContent = '';
       showErrorMessage(translate('unknown_error'));
+    })
+    .finally(() => {
+      aiModelsLoading = false;
     });
 }
 
 function toggleAiInputs() {
+  aiModels = null;
+  document.querySelector("#ai_model_search").value = '';
+  document.querySelector("#ai_model_search_status").textContent = '';
   const type = document.getElementById("ai_type").value;
   const apiKeyInput = document.getElementById("ai_api_key");
   const apiKeyToggleIcon = apiKeyInput.closest(".password-field")?.querySelector(".password-toggle i");

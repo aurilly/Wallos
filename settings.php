@@ -1383,6 +1383,12 @@ $upcomingPaymentsLimit = normalize_upcoming_payments_limit($settings['upcoming_p
             </div>
             <div class="form-group">
                 <label for="ai_model"><?= translate('ai_model', $i18n) ?>:</label>
+                <div class="form-group">
+                    <input type="search" id="ai_model_search" autocomplete="off"
+                        placeholder="<?= translate('search_ai_models', $i18n) ?>"
+                        aria-label="<?= translate('search_ai_models', $i18n) ?>" aria-controls="ai_model"
+                        onfocus="if (aiModels === null) fetch_ai_models()" oninput="filterAiModels()">
+                </div>
                 <select id="ai_model" name="ai_model">
                     <option value=""><?= translate('select_ai_model', $i18n) ?></option>
                     <?php if (!empty($aiSettings['model'])): ?>
@@ -1391,6 +1397,9 @@ $upcomingPaymentsLimit = normalize_upcoming_payments_limit($settings['upcoming_p
                         </option>
                     <?php endif; ?>
                 </select>
+                <span id="ai_model_search_status" role="status" aria-live="polite"
+                    data-loading="<?= translate('loading_ai_models', $i18n) ?>"
+                    data-empty="<?= translate('no_matching_ai_models', $i18n) ?>"></span>
             </div>
             <div class="form-group">
                 <label for="ai_run_schedule" class="flex"><?= translate('run_schedule', $i18n) ?>:</label>

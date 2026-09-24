@@ -537,6 +537,9 @@ $i18n = [
     "payment_method_bank_transfer" => "Bank Transfer",
     "payment_method_direct_debit" => "Direct Debit",
     "payment_method_money" => "Money",
+    "search_ai_models" => "Search models by name or ID",
+    "loading_ai_models" => "Loading models…",
+    "no_matching_ai_models" => "No matching models. Your current selection is unchanged.",
 ];
 
 
