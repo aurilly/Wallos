@@ -193,7 +193,7 @@ function ai_decode_provider_response($reply)
   Returns ["success" => true, "content" => string]
   or      ["success" => false, "message" => string].
 */
-function ai_complete($aiSettings, $prompt, $db, $i18n, $userId)
+function ai_complete($aiSettings, $prompt, $db, $i18n, $userId, $timeout = 300)
 {
     $type = $aiSettings['type'] ?? '';
     $enabled = !empty($aiSettings['enabled']);
@@ -222,7 +222,10 @@ function ai_complete($aiSettings, $prompt, $db, $i18n, $userId)
             return ["success" => false, "message" => translate('invalid_host', $i18n)];
         }
 
-        $ssrf = validate_webhook_url_for_ssrf($host, $db, $i18n, $userId);
+        $ssrf = is_url_safe_for_ssrf($host, $db, $userId);
+        if (!$ssrf) {
+            return ["success" => false, "message" => translate('invalid_host', $i18n)];
+        }
 
         if ($type === 'ollama') {
             $apiKey = '';
@@ -297,7 +300,8 @@ function ai_complete($aiSettings, $prompt, $db, $i18n, $userId)
     }
 
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 300);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
 
     $reply = curl_exec($ch);
 

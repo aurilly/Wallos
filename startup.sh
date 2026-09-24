@@ -20,6 +20,7 @@ chmod -R 770 /tmp
 PHP_FPM_PID=
 NGINX_PID=
 CROND_PID=
+AI_WORKER_PID=
 shutdown_in_progress=0
 
 shutdown_once() {
@@ -36,6 +37,7 @@ shutdown_once() {
   [ -n "${PHP_FPM_PID}" ] && kill -QUIT "${PHP_FPM_PID}" 2>/dev/null || true
   # cron can just get TERM
   [ -n "${CROND_PID}" ] && kill -TERM "${CROND_PID}" 2>/dev/null || true
+  [ -n "${AI_WORKER_PID}" ] && kill -TERM "${AI_WORKER_PID}" 2>/dev/null || true
   echo "Graceful shutdown complete."
 }
 
@@ -69,6 +71,12 @@ sleep 1
 # Change permissions on the database directory
 chmod -R 755 /var/www/html/db/
 chown -R www-data:www-data /var/www/html/db/
+
+# Start only after migrations and database permissions are ready. The worker
+# runs independently of HTTP requests, so proxy timeouts cannot cancel jobs.
+echo "Launching AI recommendation worker"
+su -s /bin/sh www-data -c 'exec /usr/local/bin/php /var/www/html/endpoints/cronjobs/processrecommendations.php' &
+AI_WORKER_PID=$!
 
 mkdir -p /var/www/html/images/uploads/logos/avatars
 

@@ -538,6 +538,9 @@ $i18n = [
     "payment_method_direct_debit" => "Direct Debit",
     "payment_method_money" => "Money",
     "ai_share_notes" => "Send notes to AI for this subscription",
+    "ai_job_queued" => "Recommendations are queued. You can leave this page and return later.",
+    "ai_job_running" => "Generating recommendations. This may take several minutes; you can leave this page and return later.",
+    "ai_job_expired" => "Recommendation generation timed out or was interrupted. Please try again.",
     "ai_share_notes_info" => "Off by default. When enabled, these notes are sent to your configured AI provider for manual and scheduled recommendations. Leave off for sensitive notes.",
 ];
 
