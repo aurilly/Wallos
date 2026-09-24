@@ -27,6 +27,7 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
             $subscriptionData['frequency'] = $row['frequency'];
             $subscriptionData['cycle'] = $row['cycle'];
             $subscriptionData['notes'] = $row['notes'] ?? "";
+            $subscriptionData['ai_share_notes'] = (int) ($row['ai_share_notes'] ?? 0);
             $subscriptionData['notes_html'] = render_notes_markdown($row['notes'] ?? "");
             $subscriptionData['payment_method_id'] = $row['payment_method_id'];
             $subscriptionData['payer_user_id'] = $row['payer_user_id'];

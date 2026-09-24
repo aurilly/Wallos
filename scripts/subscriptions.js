@@ -98,6 +98,7 @@ function fillEditFormFields(subscription) {
 
   const notes = document.querySelector("#notes");
   notes.value = subscription.notes;
+  document.querySelector("#ai_share_notes").checked = Number(subscription.ai_share_notes) === 1;
   const inactive = document.querySelector("#inactive");
   inactive.checked = subscription.inactive;
   const url = document.querySelector("#url");

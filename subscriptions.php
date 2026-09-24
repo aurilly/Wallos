@@ -537,6 +537,16 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
 
     <div class="form-group">
       <div class="inline grow">
+        <input type="checkbox" id="ai_share_notes" name="ai_share_notes" value="1" aria-describedby="ai-share-notes-info">
+        <label for="ai_share_notes" class="grow"><?= translate('ai_share_notes', $i18n) ?></label>
+      </div>
+      <div class="settings-notes">
+        <p id="ai-share-notes-info"><?= translate('ai_share_notes_info', $i18n) ?></p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="inline grow">
         <input type="checkbox" id="inactive" name="inactive" onchange="toggleReplacementSub()">
         <label for="inactive" class="grow"><?= translate('inactive', $i18n) ?></label>
       </div>

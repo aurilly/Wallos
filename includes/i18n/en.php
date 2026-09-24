@@ -537,6 +537,8 @@ $i18n = [
     "payment_method_bank_transfer" => "Bank Transfer",
     "payment_method_direct_debit" => "Direct Debit",
     "payment_method_money" => "Money",
+    "ai_share_notes" => "Send notes to AI for this subscription",
+    "ai_share_notes_info" => "Off by default. When enabled, these notes are sent to your configured AI provider for manual and scheduled recommendations. Leave off for sensitive notes.",
 ];
 
 
