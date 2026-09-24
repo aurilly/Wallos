@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'static-cache-v9';
+const STATIC_CACHE = 'static-cache-v11';
 const PAGES_CACHE = 'pages-cache-v1';
 const LOGOS_CACHE = 'logos-cache-v2';
 
@@ -178,7 +178,7 @@ self.addEventListener('install', function (event) {
             for (let i = 0; i < staticAssets.length; i += BATCH_SIZE) {
                 await Promise.allSettled(
                     staticAssets.slice(i, i + BATCH_SIZE).map(url =>
-                        fetch(url).then(response => {
+                        fetch(url, { cache: 'reload' }).then(response => {
                             if (response.ok) return cache.put(url, response);
                         }).catch(() => {}) // silently skip missing files
                     )
@@ -226,6 +226,26 @@ self.addEventListener('fetch', function (event) {
 
     // Never intercept non-GET requests (POST, etc.)
     if (request.method !== 'GET') return;
+
+    // Online pages must execute the JavaScript deployed with their PHP/JSON.
+    // Cache-first scripts can otherwise pair new markup with old form handlers
+    // (unchecked saved fields) or old synchronous recommendation requests.
+    if (url.origin === self.location.origin && url.pathname.endsWith('.js')) {
+        event.respondWith(
+            caches.open(STATIC_CACHE).then(async cache => {
+                try {
+                    const response = await fetch(request, { cache: 'no-cache' });
+                    if (response.ok) await cache.put(request, response.clone()).catch(() => {});
+                    return response;
+                } catch (error) {
+                    const cached = await cache.match(request) || await cache.match(request, { ignoreSearch: true });
+                    if (cached) return cached;
+                    throw error;
+                }
+            })
+        );
+        return;
+    }
 
     // Search endpoints must always return their current JSON response. Falling
     // back to a cached PHP page (especially with ignoreSearch) makes the client
