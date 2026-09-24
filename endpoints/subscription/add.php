@@ -245,6 +245,7 @@ $paymentMethodId = $_POST["payment_method_id"];
 $payerUserId = $_POST["payer_user_id"];
 $categoryId = $_POST['category_id'];
 $notes = validate_markdown($_POST["notes"]);
+$aiShareNotes = ($_POST['ai_share_notes'] ?? '') === '1' ? 1 : 0;
 $url = validate($_POST['url']);
 $logoUrl = validate($_POST['logo-url']);
 $logo = "";
@@ -324,12 +325,12 @@ if ($logo !== "" && $removeBackgroundEnabled) {
 
 if (!$isEdit) {
     $sql = "INSERT INTO subscriptions (
-                        name, logo, price, currency_id, next_payment, cycle, frequency, notes,
+                        name, logo, price, currency_id, next_payment, cycle, frequency, notes, ai_share_notes,
                         payment_method_id, payer_user_id, category_id, notify, inactive, url,
                         notify_days_before, user_id, cancellation_date, replacement_subscription_id,
                         auto_renew, start_date, logo_text_color, logo_variant
                     ) VALUES (
-                        :name, :logo, :price, :currencyId, :nextPayment, :cycle, :frequency, :notes,
+                        :name, :logo, :price, :currencyId, :nextPayment, :cycle, :frequency, :notes, :aiShareNotes,
                         :paymentMethodId, :payerUserId, :categoryId, :notify, :inactive, :url,
                         :notifyDaysBefore, :userId, :cancellationDate, :replacement_subscription_id,
                         :autoRenew, :startDate, :logoTextColor, :logoVariant
@@ -362,6 +363,7 @@ if (!$isEdit) {
                         cycle = :cycle, 
                         frequency = :frequency, 
                         notes = :notes, 
+                        ai_share_notes = :aiShareNotes,
                         payment_method_id = :paymentMethodId,
                         payer_user_id = :payerUserId, 
                         category_id = :categoryId, 
@@ -394,6 +396,7 @@ $stmt->bindParam(':startDate', $startDate, SQLITE3_TEXT);
 $stmt->bindParam(':cycle', $cycle, SQLITE3_INTEGER);
 $stmt->bindParam(':frequency', $frequency, SQLITE3_INTEGER);
 $stmt->bindParam(':notes', $notes, SQLITE3_TEXT);
+$stmt->bindParam(':aiShareNotes', $aiShareNotes, SQLITE3_INTEGER);
 $stmt->bindParam(':paymentMethodId', $paymentMethodId, SQLITE3_INTEGER);
 $stmt->bindParam(':payerUserId', $payerUserId, SQLITE3_INTEGER);
 $stmt->bindParam(':categoryId', $categoryId, SQLITE3_INTEGER);

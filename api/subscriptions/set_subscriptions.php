@@ -19,6 +19,7 @@ For 'add' and 'edit' actions (all optional for 'edit'):
 - payer_user_id: the household member payer ID (integer).
 - category_id: the category ID (integer).
 - notes: subscription notes (string, Markdown supported).
+- ai_share_notes: send notes to AI recommendations (1 or 0; defaults to 0 on add, unchanged when omitted on edit).
 - url: subscription URL (string).
 - logo_url: an image URL to download as the logo (string).
 - logo: direct image file upload for the logo.
@@ -376,6 +377,7 @@ switch ($action) {
         $categoryId = $_POST['category_id'] ?? null;
         
         $notes = isset($_POST['notes']) ? validate_markdown($_POST['notes']) : '';
+        $aiShareNotes = in_array($_POST['ai_share_notes'] ?? 0, [1, '1'], true) ? 1 : 0;
         $url = isset($_POST['url']) ? validate($_POST['url']) : '';
         
         $notify = $_POST['notify'] ?? $_POST['notifications'] ?? '0';
@@ -549,12 +551,12 @@ switch ($action) {
 
         // Insert
         $sqlInsert = "INSERT INTO subscriptions (
-                            name, logo, price, currency_id, next_payment, cycle, frequency, notes,
+                            name, logo, price, currency_id, next_payment, cycle, frequency, notes, ai_share_notes,
                             payment_method_id, payer_user_id, category_id, notify, inactive, url,
                             notify_days_before, user_id, cancellation_date, replacement_subscription_id,
                             auto_renew, start_date, logo_text_color, logo_variant
                         ) VALUES (
-                            :name, :logo, :price, :currencyId, :nextPayment, :cycle, :frequency, :notes,
+                            :name, :logo, :price, :currencyId, :nextPayment, :cycle, :frequency, :notes, :aiShareNotes,
                             :paymentMethodId, :payerUserId, :categoryId, :notify, :inactive, :url,
                             :notifyDaysBefore, :userId, :cancellationDate, :replacement_subscription_id,
                             :autoRenew, :startDate, :logoTextColor, :logoVariant
@@ -570,6 +572,7 @@ switch ($action) {
         $stmtInsert->bindParam(':cycle', $cycle, SQLITE3_INTEGER);
         $stmtInsert->bindParam(':frequency', $frequency, SQLITE3_INTEGER);
         $stmtInsert->bindParam(':notes', $notes, SQLITE3_TEXT);
+        $stmtInsert->bindParam(':aiShareNotes', $aiShareNotes, SQLITE3_INTEGER);
         $stmtInsert->bindParam(':paymentMethodId', $paymentMethodId, SQLITE3_INTEGER);
         $stmtInsert->bindParam(':payerUserId', $payerUserId, SQLITE3_INTEGER);
         $stmtInsert->bindParam(':categoryId', $categoryId, SQLITE3_INTEGER);
@@ -663,6 +666,7 @@ switch ($action) {
         }
 
         $notes = isset($_POST['notes']) ? validate_markdown($_POST['notes']) : $subscription['notes'];
+        $aiShareNotes = in_array($_POST['ai_share_notes'] ?? $subscription['ai_share_notes'] ?? 0, [1, '1'], true) ? 1 : 0;
         $url = isset($_POST['url']) ? validate($_POST['url']) : $subscription['url'];
 
         $notify = $subscription['notify'];
@@ -868,6 +872,7 @@ switch ($action) {
                             cycle = :cycle,
                             frequency = :frequency,
                             notes = :notes,
+                            ai_share_notes = :aiShareNotes,
                             payment_method_id = :paymentMethodId,
                             payer_user_id = :payerUserId,
                             category_id = :categoryId,
@@ -892,6 +897,7 @@ switch ($action) {
         $stmtUpdate->bindParam(':cycle', $cycle, SQLITE3_INTEGER);
         $stmtUpdate->bindParam(':frequency', $frequency, SQLITE3_INTEGER);
         $stmtUpdate->bindParam(':notes', $notes, SQLITE3_TEXT);
+        $stmtUpdate->bindParam(':aiShareNotes', $aiShareNotes, SQLITE3_INTEGER);
         $stmtUpdate->bindParam(':paymentMethodId', $paymentMethodId, SQLITE3_INTEGER);
         $stmtUpdate->bindParam(':payerUserId', $payerUserId, SQLITE3_INTEGER);
         $stmtUpdate->bindParam(':categoryId', $categoryId, SQLITE3_INTEGER);
